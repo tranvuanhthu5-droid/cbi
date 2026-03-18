@@ -1,1 +1,197 @@
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+const PHOTOS = [
+  { src: "/photo1.jpeg", caption: "Your happiest moments ✨" },
+  { src: "/photo2.jpeg", caption: "The way you shine everywhere 💖" },
+  { src: "/photo3.jpeg", caption: "Us, always together ❤️" },
+  { src: "/photo4.jpeg", caption: "Beautiful inside and out 🌸" },
+  { src: "/photo5.jpeg", caption: "Every moment with you matters 💫" },
+  { src: "/photo6.jpeg", caption: "Forever my favorite person 🫶" },
+];
+
+const MUSIC_SRC = "https://cdn.pixabay.com/download/audio/2022/03/15/audio_115b9bdb93.mp3"; // upload your song here
+
+export default function BirthdayWebsite() {
+  const [open, setOpen] = useState(false);
+  const [index, setIndex] = useState(0);
+  const [started, setStarted] = useState(false);
+  const [typedText, setTypedText] = useState("");
+  const audioRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  const message = "Happy Birthday... You are the best thing in my life. 💖";
+
+  // 🎬 TYPEWRITER EFFECT
+  useEffect(() => {
+    if (!started) return;
+    let i = 0;
+    const interval = setInterval(() => {
+      setTypedText(message.slice(0, i));
+      i++;
+      if (i > message.length) clearInterval(interval);
+    }, 40);
+    return () => clearInterval(interval);
+  }, [started]);
+
+  // 📸 SLIDESHOW
+  useEffect(() => {
+    if (!started) return;
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % PHOTOS.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [started]);
+
+  // 🎆 SIMPLE FIREWORKS CANVAS
+  useEffect(() => {
+    if (!started) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let particles = [];
+
+    function createFirework() {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height / 2;
+      for (let i = 0; i < 30; i++) {
+        particles.push({
+          x,
+          y,
+          vx: (Math.random() - 0.5) * 5,
+          vy: (Math.random() - 0.5) * 5,
+          life: 100,
+        });
+      }
+    }
+
+    function animate() {
+      ctx.fillStyle = "rgba(0,0,0,0.2)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach((p, i) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = "#ff69b4";
+        ctx.fill();
+
+        if (p.life <= 0) particles.splice(i, 1);
+      });
+
+      if (Math.random() < 0.05) createFirework();
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  }, [started]);
+
+  const handleStart = () => {
+    setStarted(true);
+    if (audioRef.current) audioRef.current.play().catch(() => {});
+  };
+
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-black text-white">
+      {/* 🎵 MUSIC */}
+      <audio ref={audioRef} src={MUSIC_SRC} loop preload="auto" />
+
+      {/* 🎆 CANVAS */}
+      <canvas ref={canvasRef} className="absolute inset-0" />
+
+      {/* 🌟 GLOW */}
+      <div className="absolute inset-0 bg-gradient-to-br from-pink-500/30 via-purple-500/20 to-indigo-500/30 blur-3xl" />
+
+      {/* ❤️ FLOATING HEARTS */}
+      {[...Array(25)].map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{ y: "100%", opacity: 0 }}
+          animate={{ y: "-120%", opacity: 1 }}
+          transition={{ duration: 6 + Math.random() * 4, repeat: Infinity, delay: Math.random() * 5 }}
+          className="absolute text-pink-400 text-xl"
+          style={{ left: `${Math.random() * 100}%` }}
+        >
+          ❤️
+        </motion.div>
+      ))}
+
+      {/* 🚀 START */}
+      {!started && (
+        <div className="flex flex-col items-center justify-center min-h-screen z-10 relative">
+          <motion.h1 initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-6xl font-bold mb-8 text-center">
+            Tap to Enter ✨
+          </motion.h1>
+          <Button onClick={handleStart}>Start the Magic 🎁</Button>
+        </div>
+      )}
+
+      {/* 🎉 MAIN */}
+      {started && (
+        <div className="flex flex-col items-center justify-center min-h-screen p-6 z-10 relative">
+          <motion.h1 initial={{ opacity: 0, y: -40 }} animate={{ opacity: 1, y: 0 }} className="text-5xl font-bold text-center mb-4">
+            Happy Birthday 🎂
+          </motion.h1>
+
+          {/* 💬 TYPEWRITER */}
+          <p className="text-xl mb-6 text-center max-w-xl min-h-[2rem]">
+            {typedText}
+          </p>
+
+          {/* 📸 SLIDESHOW */}
+          <div className="w-full max-w-xl h-80 relative rounded-2xl overflow-hidden shadow-2xl mb-4">
+            <AnimatePresence>
+              <motion.img
+                key={index}
+                src={PHOTOS[index].src}
+                initial={{ opacity: 0, scale: 1.1 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1 }}
+                className="absolute w-full h-full object-cover"
+              />
+            </AnimatePresence>
+          </div>
+
+          {/* 📝 CAPTION */}
+          <p className="text-sm text-gray-300 mb-6">
+            {PHOTOS[index].caption}
+          </p>
+
+          {/* 💌 CARD */}
+          <Card className="max-w-xl bg-white/10 backdrop-blur-xl border border-white/20">
+            <CardContent className="p-6 text-center">
+              <p className="text-lg mb-4">
+                You are my happiness, my safe place, and my forever person.
+              </p>
+              <Button onClick={() => setOpen(true)}>Final Surprise 💝</Button>
+
+              <AnimatePresence>
+                {open && (
+                  <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} className="mt-6">
+                    <p className="text-2xl font-bold text-pink-300">I love you forever ❤️</p>
+                    <p className="mt-2">No matter what happens, I'm always here.</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </CardContent>
+          </Card>
+
+          {/* ✨ FOOTER */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }} className="mt-10 text-sm text-gray-300">
+            Made with all my heart 💕
+          </motion.div>
+        </div>
+      )}
+    </div>
+  );
+}
 
